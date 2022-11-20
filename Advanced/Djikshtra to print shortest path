@@ -1,0 +1,116 @@
+#include<bits/stdc++.h>
+using namespace std;
+
+map<int,list<pair<int,int>>> graph;
+void makeAdjList(int a[],int b[],int c[],int edges){
+    for(int i = 0; i<edges; i++){
+        graph[a[i]].push_back(make_pair(b[i],c[i]));
+        graph[b[i]].push_back(make_pair(a[i],c[i]));
+    }
+}
+
+void printAdjList(){
+    for(auto itrMP : graph){
+        cout<<itrMP.first<<" -> ";
+        for(auto itrP:itrMP.second) cout<<" ( "<<itrP.first<<" , "<<itrP.second<<" ) ";
+        cout<<endl;
+    }
+}
+
+void displayDist(map<int,pair<int,vector<int>>> M){
+    for(auto itr1 : M){
+        cout<<itr1.first<<" Dist - "<<itr1.second.first<<" Path : ";
+        for(auto itr2:itr1.second.second){
+            cout<<itr2<<" -> ";
+        }
+        cout<<endl;
+    }
+}
+
+// ALGORITHM
+pair<int, vector<int>> returnDistance(int start,int dest, int numEdges){
+    pair<int, vector<int>> ans;
+    map<int,pair<int,vector<int>>> dist;                  // nodeValue -> shortPathNumber , shortestPath
+    for(int i = 1 ; i < numEdges + 1 ; i++){
+        dist[i] = {INT_MAX,{}};
+    }
+    set<pair<int,int>> se;
+    dist[start].first = 0;
+    dist[start].second.push_back(start);
+    se.insert(make_pair(0,start));
+    while(!se.empty()){
+        auto top = *(se.begin());
+        int nodeDistance = top.first;
+        int nodeValue = top.second;
+        se.erase(se.begin());
+        for(auto child: graph[nodeValue]){
+            if(nodeDistance + child.second < dist[child.first].first) {
+                auto record = se.find(make_pair(dist[child.first].first , child.first));
+                if(record!=se.end()){
+                    se.erase(record);
+                }
+                dist[child.first].first = nodeDistance + child.second;
+                se.insert(make_pair(dist[child.first].first,child.first));
+                dist[child.first].second = dist[nodeValue].second;
+                dist[child.first].second.push_back(child.first);
+            }
+        }
+    }
+    displayDist(dist);
+    ans.first = dist[dest].first;
+    ans.second = dist[dest].second;
+    return ans;
+}
+
+vector<int> concatVector(vector<int> &vec1,vector<int> &vec2){
+    if(vec1.empty()) vec1.push_back(vec2[0]);
+    for(int i = 1 ; i < vec2.size() ; i++){
+        vec1.push_back(vec2[i]);
+    }
+    return vec1;
+}
+
+pair<int, vector<int>> returnAns(int start,int check1,int check2,int dest,int numEdges){
+    //START -> C1 -> C2 -> dest
+    pair<int, vector<int>> a1 = returnDistance(start,check1,numEdges);
+    pair<int, vector<int>> a2 = returnDistance(check1,check2,numEdges);
+    pair<int, vector<int>> a3 = returnDistance(check2,dest,numEdges);
+    //START -> C2 -> C1 -> dest
+    pair<int, vector<int>> b1 = returnDistance(start,check2,numEdges);
+    pair<int, vector<int>> b2 = returnDistance(check2,check1,numEdges);
+    pair<int, vector<int>> b3 = returnDistance(check1,dest,numEdges);
+
+    pair<int, vector<int>> a;
+    a.first = a1.first + a2.first + a3.first;
+    pair<int, vector<int>> b;
+    b.first = b1.first + b2.first + b3.first;
+    if(a.first<b.first){
+        concatVector(a.second,a1.second);
+        concatVector(a.second,a2.second);
+        concatVector(a.second,a3.second);
+        return a;
+    }
+    else{
+        concatVector(b.second,b1.second);
+        concatVector(b.second,b2.second);
+        concatVector(b.second,b3.second);
+        return b;
+    }
+}
+
+int main(){
+    int numEdges = 6, numVertices=9;
+    int src[numVertices] = {1,1,2,3,2,2,4,4,5};
+    int dest[numVertices] = {2,3,3,5,5,4,5,6,6};
+    int weight[numVertices] = {1,5,2,2,1,2,3,1,2};
+    int start;
+    makeAdjList(src,dest,weight,numVertices);
+    printAdjList();
+    pair<int,vector<int>> ans = returnAns(1,3,4,6,numEdges);
+    cout<<ans.first<<" : ";
+    for(auto itr : ans.second){
+        cout<<itr<<" -> ";
+    }
+    cout<<endl;
+    return 0;
+}
